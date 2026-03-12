@@ -2,7 +2,7 @@ services:
 
   # ─── PaddleOCR ────────────────────────────────────────────────────────────
   paddleocr:
-    image: ghcr.io/thomasbhm/paddleocr-api:latest
+    image: ghcr.io/thomasbhm/paddleocr-api:latest   # built by GitHub Actions
     container_name: paddleocr-api
     restart: unless-stopped
     ports:
