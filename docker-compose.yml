@@ -2,7 +2,7 @@ services:
 
   # ─── PaddleOCR ────────────────────────────────────────────────────────────
   paddleocr:
-    build: ./paddleocr
+    image: ghcr.io/thomasbhm/paddleocr-api:latest
     container_name: paddleocr-api
     restart: unless-stopped
     ports:
