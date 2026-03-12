@@ -7,8 +7,8 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-    environment:
-      - OMP_NUM_THREADS=2        # limit CPU threads per request
+    volumes:
+      - easyocr_models:/root/.EasyOCR   # persist downloaded OCR models
     deploy:
       resources:
         limits:
@@ -33,3 +33,4 @@ services:
 
 volumes:
   whisper_models:
+  easyocr_models:

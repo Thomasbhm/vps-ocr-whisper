@@ -1,14 +1,14 @@
 import os
 import tempfile
 
+import easyocr
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
-from paddleocr import PaddleOCR
 
-app = FastAPI(title="PaddleOCR API", version="1.0.0")
+app = FastAPI(title="OCR API", version="1.0.0")
 
-# Load models once at startup (use_gpu=False = CPU only)
-ocr = PaddleOCR(use_angle_cls=True, lang="en", use_gpu=False, show_log=False)
+# Models are downloaded to /root/.EasyOCR (persisted via Docker volume)
+reader = easyocr.Reader(["en", "fr"], gpu=False)
 
 
 @app.get("/health")
@@ -19,7 +19,7 @@ def health():
 @app.post("/ocr")
 async def extract_text(file: UploadFile = File(...)):
     """
-    Upload an image (JPG, PNG, BMP...) and receive the extracted text.
+    Upload an image (JPG, PNG, BMP…) and receive the extracted text.
     """
     allowed = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
     ext = os.path.splitext(file.filename or "img.jpg")[1].lower()
@@ -30,7 +30,7 @@ async def extract_text(file: UploadFile = File(...)):
         )
 
     content = await file.read()
-    if len(content) == 0:
+    if not content:
         raise HTTPException(status_code=400, detail="Empty file.")
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
@@ -38,12 +38,11 @@ async def extract_text(file: UploadFile = File(...)):
         tmp_path = tmp.name
 
     try:
-        result = ocr.ocr(tmp_path, cls=True)
-        lines = []
-        if result and result[0]:
-            for line in result[0]:
-                text, confidence = line[1]
-                lines.append({"text": text, "confidence": round(float(confidence), 4)})
+        results = reader.readtext(tmp_path)
+        lines = [
+            {"text": text, "confidence": round(float(conf), 4)}
+            for _, text, conf in results
+        ]
         full_text = "\n".join(l["text"] for l in lines)
         return JSONResponse({"text": full_text, "lines": lines})
     except Exception as exc:
